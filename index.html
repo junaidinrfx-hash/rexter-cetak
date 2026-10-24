@@ -242,11 +242,11 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 4 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 5 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(!D){lapor('Data stiker tidak ada. Buka halaman ini dari tombol Cetak langsung di REXTER.','err');$('bCetak').disabled=true;return;}
-  const logo=await muat(LOGO);
+  const logo=await muat(D.logo||LOGO); // versi Mitra: logo Mitra (sudah hitam 1 warna dari REXTER)
   cetakUrl=KARTU.leher(D,logo).toDataURL('image/png');
   $('prev').src=KARTU.leher(D,logo,24,'#FFE34D').toDataURL('image/png');
   $('meta').innerHTML='';[D.batch,D.fill?'#'+String(D.fill).padStart(3,'0'):'',D.sn].filter(Boolean).forEach(t=>{const s=document.createElement('span');s.className='chip';s.textContent=t;$('meta').appendChild(s);});
