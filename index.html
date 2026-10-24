@@ -42,7 +42,7 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding-bottom:calc(16
     <div class="kecil">Pertama kali: pairing PT-D610BT dulu di Pengaturan → Bluetooth tab, lalu tekan Cetak stiker dan pilih PT-D610BT di daftar. Berikutnya printer diingat otomatis.</div>
   </section>
 </main>
-<footer>Made with ❤ Powered by ReedFOX</footer>
+<footer>Made with ❤ Powered by ReedFOX<br><span id="ver" style="opacity:.7"></span></footer>
 <script>/* FOXFILL — QR Code encoder (byte mode, error correction M, sama dengan HYDROX). Based on the public QR algorithm (ISO/IEC 18004). */
 const QRH = (function () {
   const ECC = [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28];
@@ -242,6 +242,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 2 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(!D){lapor('Data stiker tidak ada. Buka halaman ini dari tombol Cetak langsung di REXTER.','err');$('bCetak').disabled=true;return;}
