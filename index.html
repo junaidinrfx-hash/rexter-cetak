@@ -39,7 +39,7 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding-bottom:calc(16
     <h1>Printer Brother PT-D610BT</h1>
     <div class="btns"><button class="utama" id="bCetak" type="button">Cetak stiker</button><button class="kedua" id="bGanti" type="button">Pilih printer</button></div>
     <div class="st" id="st">Pastikan printer menyala dan sudah di-pairing di Bluetooth tab.</div>
-    <div class="kecil">Pertama kali: tekan Cetak stiker lalu pilih PT-D610BT. Berikutnya printer diingat otomatis.</div>
+    <div class="kecil">Pertama kali: pairing PT-D610BT dulu di Pengaturan → Bluetooth tab, lalu tekan Cetak stiker dan pilih PT-D610BT di daftar. Berikutnya printer diingat otomatis.</div>
   </section>
 </main>
 <footer>Made with ❤ Powered by ReedFOX</footer>
@@ -252,7 +252,7 @@ function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok
   if(!('serial' in navigator)){lapor('Browser ini belum mendukung Bluetooth langsung. Buka halaman ini di Google Chrome versi terbaru (Android).','err');$('bCetak').disabled=true;$('bGanti').disabled=true;return;}
   const ada=await navigator.serial.getPorts();if(ada.length)lapor('Printer tersimpan. Tekan Cetak stiker.');
 })();
-async function minta(){return navigator.serial.requestPort({allowedBluetoothServiceClassIds:[SPP_UUID],filters:[{bluetoothServiceClassId:SPP_UUID}]});}
+async function minta(){return navigator.serial.requestPort({allowedBluetoothServiceClassIds:[SPP_UUID]});} // tanpa filter: semua perangkat Bluetooth yang sudah di-pairing ikut tampil
 async function port(){const a=await navigator.serial.getPorts();return a.length?a[0]:minta();}
 async function bacaN(p,n,ms){const r=p.readable.getReader(),buf=[];const t=setTimeout(()=>{try{r.cancel();}catch(e){}},ms);try{while(buf.length<n){const x=await r.read();if(x.done)break;for(const v of x.value)buf.push(v);}}finally{clearTimeout(t);r.releaseLock();}return buf;}
 function raster(url,pin0,n){return new Promise((ok,no)=>{const im=new Image();im.onerror=()=>no(new Error('Gambar stiker tidak terbaca.'));im.onload=()=>{const W=im.width,H=im.height,c=document.createElement('canvas');c.width=W;c.height=n;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,n);const pot=Math.max(0,(H-n)/2);g.drawImage(im,0,pot,W,H-2*pot,0,0,W,n);const p=g.getImageData(0,0,W,n).data,rows=[];for(let x=0;x<W;x++){const L=new Uint8Array(16);let isi=false;for(let y=0;y<n;y++){const i=(y*W+x)*4;if(0.3*p[i]+0.59*p[i+1]+0.11*p[i+2]<128){const pin=pin0+y;L[15-(pin>>3)]|=1<<(pin&7);isi=true;}}rows.push(isi?L:null);}ok(rows);};im.src=url;});}
