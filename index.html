@@ -242,7 +242,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 2 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 3 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(!D){lapor('Data stiker tidak ada. Buka halaman ini dari tombol Cetak langsung di REXTER.','err');$('bCetak').disabled=true;return;}
@@ -256,7 +256,7 @@ function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok
 async function minta(){return navigator.serial.requestPort({allowedBluetoothServiceClassIds:[SPP_UUID]});} // tanpa filter: semua perangkat Bluetooth yang sudah di-pairing ikut tampil
 async function port(){const a=await navigator.serial.getPorts();return a.length?a[0]:minta();}
 async function bacaN(p,n,ms){const r=p.readable.getReader(),buf=[];const t=setTimeout(()=>{try{r.cancel();}catch(e){}},ms);try{while(buf.length<n){const x=await r.read();if(x.done)break;for(const v of x.value)buf.push(v);}}finally{clearTimeout(t);r.releaseLock();}return buf;}
-function raster(url,pin0,n){return new Promise((ok,no)=>{const im=new Image();im.onerror=()=>no(new Error('Gambar stiker tidak terbaca.'));im.onload=()=>{const W=im.width,H=im.height,c=document.createElement('canvas');c.width=W;c.height=n;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,n);const pot=Math.max(0,(H-n)/2);g.drawImage(im,0,pot,W,H-2*pot,0,0,W,n);const p=g.getImageData(0,0,W,n).data,rows=[];for(let x=0;x<W;x++){const L=new Uint8Array(16);let isi=false;for(let y=0;y<n;y++){const i=(y*W+x)*4;if(0.3*p[i]+0.59*p[i+1]+0.11*p[i+2]<128){const pin=pin0+y;L[15-(pin>>3)]|=1<<(pin&7);isi=true;}}rows.push(isi?L:null);}ok(rows);};im.src=url;});}
+function raster(url,pin0,n){return new Promise((ok,no)=>{const im=new Image();im.onerror=()=>no(new Error('Gambar stiker tidak terbaca.'));im.onload=()=>{const W=im.width,H=im.height,c=document.createElement('canvas');c.width=W;c.height=n;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,n);const pot=Math.max(0,(H-n)/2);g.drawImage(im,0,pot,W,H-2*pot,0,0,W,n);const p=g.getImageData(0,0,W,n).data,rows=[];for(let x=0;x<W;x++){const L=new Uint8Array(16);let isi=false;for(let y=0;y<n;y++){const i=(y*W+x)*4;if(0.3*p[i]+0.59*p[i+1]+0.11*p[i+2]<128){const pin=pin0+(n-1-y);L[15-(pin>>3)]|=1<<(pin&7);isi=true;}}rows.push(isi?L:null);}ok(rows);};im.src=url;});}
 async function cetak(pilihBaru){
   const b=$('bCetak'),g=$('bGanti');b.disabled=g.disabled=true;lapor('Menghubungi printer…');let p;
   try{
@@ -273,7 +273,7 @@ async function cetak(pilihBaru){
     await k([0x1B,0x69,0x4D,0x40]);await k([0x1B,0x69,0x4B,0x08]);await k([0x1B,0x69,0x64,14,0]);await k([0x4D,0x02]);
     let pk=[];for(const L of rows){if(L){pk.push(0x47,17,0,15);for(const v of L)pk.push(v);}else pk.push(0x5A);if(pk.length>4000){await k(pk);pk=[];}}
     pk.push(0x1A);await k(pk);w.releaseLock();await bacaN(p,32,8000).catch(()=>{});
-    lapor('Stiker terkirim ke printer. Kalau hasilnya terbalik atau cermin, kabari supaya arahnya dibetulkan.','ok');
+    lapor('Stiker terkirim ke printer. Selesai.','ok');
   }catch(e){
     if(e&&e.name==='NotFoundError')lapor('Printer belum dipilih. Pastikan PT-D610BT sudah di-pairing, lalu tekan Pilih printer.','err');
     else lapor('Gagal cetak: '+(e&&e.message||e),'err');
