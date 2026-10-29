@@ -267,6 +267,7 @@ function gambarQr(cv,teks,logo,warna,latar){
   if(logo){const b=L*m,bx=l0*m;g.fillStyle='#fff';rr(bx,bx,b,b,m*1.2);g.fill();g.drawImage(logo,bx+m*.25,bx+m*.25,b-m*.5,b-m*.5);}
 }
 /* Label QR untuk Brother QL-820NWB (300 dpi, 720 pin). Dicetak langsung lewat Bluetooth, hitam-putih. */
+const GESER=13; // geser isi ±1,1 mm ke kiri (hasil cetak uji 30 Okt: isi agak ke kanan)
 const QL={50:{dot:554,panjang:68},62:{dot:696,panjang:84}}, PX=300/25.4;
 function hitamkan(im){if(!im)return null;const c=document.createElement('canvas');c.width=im.naturalWidth||im.width;c.height=im.naturalHeight||im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const d=g.getImageData(0,0,c.width,c.height),p=d.data;
   for(let i=0;i<p.length;i+=4){const ink=p[i+3]>110&&(0.3*p[i]+0.59*p[i+1]+0.11*p[i+2])<225;p[i]=p[i+1]=p[i+2]=ink?0:255;p[i+3]=ink?255:0;}g.putImageData(d,0,0);return c;}
@@ -274,7 +275,7 @@ function gambarLabel(lebar,logo){
   const q=QL[lebar]||QL[50],k=lebar/50,W=q.dot,H=Math.round(q.panjang*PX)-70,c=document.createElement('canvas');c.width=W;c.height=H;
   const g=c.getContext('2d'),mm=v=>v*PX*k,rr=(x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();};
   g.fillStyle='#fff';g.fillRect(0,0,W,H);
-  const ins=mm(.8),cw=W-2*ins,ch=H-2*ins;g.save();rr(ins,ins,cw,ch,mm(5));g.clip();g.fillStyle='#000';g.fillRect(ins,ins,cw,mm(1.7));g.restore();
+  const ins=mm(.35),cw=W-2*ins,ch=H-2*ins;g.save();rr(ins,ins,cw,ch,mm(5));g.clip();g.fillStyle='#000';g.fillRect(ins,ins,cw,mm(1.7));g.restore();
   g.strokeStyle='#000';g.lineWidth=mm(.35);rr(ins,ins,cw,ch,mm(5));g.stroke();
   // tata letak memenuhi label: QR dibuat sebesar mungkin dari sisa tinggi, jarak antar-elemen dirapatkan
   const sn=D.sn||'–',bt=D.batch||'',qp=mm(1.8),G1=mm(1.4),G2=mm(1.5),G3=mm(1.2),PAD=mm(1.1),bar=mm(1.7);
@@ -324,7 +325,7 @@ async function cetakQl(baru){
     const r=await portQl(baru);p=r[0];const st=r[1];
     if(st[8]||st[9])throw new Error('Printer melaporkan error (kode '+st[8]+'/'+st[9]+'). Cek roll label dan tutup printer.');
     const lebar=st[10]===62?62:st[10]===50?50:0;if(!lebar)throw new Error('Roll '+st[10]+' mm belum didukung. Pakai roll 50 mm atau 62 mm.');
-    const potong=st[11]===0x0B,c=gambarLabel(lebar,logoQr),W=c.width,H=c.height,px=c.getContext('2d').getImageData(0,0,W,H).data,OFF=W+11;
+    const potong=st[11]===0x0B,c=gambarLabel(lebar,logoQr),W=c.width,H=c.height,px=c.getContext('2d').getImageData(0,0,W,H).data,OFF=W+11+GESER;
     laporQ('Mengirim stiker QR ('+lebar+' mm)…');
     const w=p.writable.getWriter(),k=a=>w.write(a instanceof Uint8Array?a:new Uint8Array(a));
     await k([0x1B,0x69,0x61,0x01]);
@@ -345,7 +346,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 14 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 15 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
