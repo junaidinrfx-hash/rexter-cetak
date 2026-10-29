@@ -267,9 +267,9 @@ function gambarQr(cv,teks,logo,warna,latar){
   if(logo){const b=L*m,bx=l0*m;g.fillStyle='#fff';rr(bx,bx,b,b,m*1.2);g.fill();g.drawImage(logo,bx+m*.25,bx+m*.25,b-m*.5,b-m*.5);}
 }
 /* Label QR untuk Brother QL-820NWB (300 dpi, 720 pin). Dicetak langsung lewat Bluetooth, hitam-putih. */
-const GESER=-2; // roll 50 mm (ukur cetak uji 30 Okt): label ±pin 8–592, isi 581 titik di pin 10–590 (maksimal, sisa ±0,2 mm)
-const MARGIN=6; // jarak kosong atas & bawah roll kontinu (titik; 12 = ±1 mm). Bawaan Brother 35 (3 mm), dikecilkan agar isi penuh sampai tepi
-const QL={50:{dot:581,panjang:68,kurang:2*MARGIN},62:{dot:696,panjang:84}}, PX=300/25.4;
+const GESER=-6; // roll 50 mm (ukur cetak uji 30 Okt): isi 588 titik di pin 6–593, mepet tepi label kiri-kanan
+const MARGIN=35; // jarak kosong atas & bawah roll kontinu = minimum printer QL (35 titik ±3 mm); diuji 30 Okt: nilai lebih kecil tetap dipaksa 3 mm
+const QL={50:{dot:588,panjang:68,kurang:2*MARGIN},62:{dot:696,panjang:84}}, PX=300/25.4;
 function hitamkan(im){if(!im)return null;const c=document.createElement('canvas');c.width=im.naturalWidth||im.width;c.height=im.naturalHeight||im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const d=g.getImageData(0,0,c.width,c.height),p=d.data;
   for(let i=0;i<p.length;i+=4){const ink=p[i+3]>110&&(0.3*p[i]+0.59*p[i+1]+0.11*p[i+2])<225;p[i]=p[i+1]=p[i+2]=ink?0:255;p[i+3]=ink?255:0;}g.putImageData(d,0,0);return c;}
 function gambarLabel(lebar,logo){
@@ -347,7 +347,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 18 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 19 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
