@@ -277,11 +277,11 @@ const MARGIN=35; // jarak kosong atas & bawah roll kontinu = minimum printer QL 
 const QL={50:{dot:588,panjang:68,kurang:2*MARGIN},62:{dot:696,panjang:84}}, PX=300/25.4;
 function hitamkan(im){if(!im)return null;const c=document.createElement('canvas');c.width=im.naturalWidth||im.width;c.height=im.naturalHeight||im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const d=g.getImageData(0,0,c.width,c.height),p=d.data;
   for(let i=0;i<p.length;i+=4){const ink=p[i+3]>110&&(0.3*p[i]+0.59*p[i+1]+0.11*p[i+2])<225;p[i]=p[i+1]=p[i+2]=ink?0:255;p[i+3]=ink?255:0;}g.putImageData(d,0,0);return c;}
-function gambarLabel(lebar,logo,dotW,kurang){
+function gambarLabel(lebar,logo,dotW,kurang,tepi){
   const q=QL[lebar]||QL[50],k=lebar/50,W=dotW||q.dot,H=Math.round(q.panjang*PX)-(kurang!=null?kurang:(q.kurang||70)),c=document.createElement('canvas');c.width=W;c.height=H;
   const g=c.getContext('2d'),mm=v=>v*PX*k,rr=(x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();};
   g.fillStyle='#fff';g.fillRect(0,0,W,H);
-  const ins=mm(.25),cw=W-2*ins,ch=H-2*ins;g.save();rr(ins,ins,cw,ch,mm(5));g.clip();g.fillStyle='#000';g.fillRect(ins,ins,cw,mm(1.7));g.restore();
+  const ins=tepi!=null?mm(tepi):mm(.25),cw=W-2*ins,ch=H-2*ins;g.save();rr(ins,ins,cw,ch,mm(5));g.clip();g.fillStyle='#000';g.fillRect(ins,ins,cw,mm(1.7));g.restore();
   g.strokeStyle='#000';g.lineWidth=mm(.35);rr(ins,ins,cw,ch,mm(5));g.stroke();
   // tata letak memenuhi label: QR dibuat sebesar mungkin dari sisa tinggi, jarak antar-elemen dirapatkan
   const sn=D.sn||'–',bt=D.batch||'',qp=mm(1.8),G1=mm(1.4),G2=mm(1.5),G3=mm(1.2),PAD=mm(1.1),bar=mm(1.7);
@@ -307,7 +307,7 @@ async function modeQr(){
   document.querySelector('.top span').textContent='Cetak stiker QR tabung';
   logoTengah=hitamkan(await muat(QRLOGO));if(logoTengah)logoTengah.__teks=[48,68,191,171]; /* kotak teks 'Reed FOX' di PNG 240 px */
   logoQr=hitamkan(await muat(D.logo||LOGO)); // logo lengkap (ReedFOX/Mitra) di atas QR, dijadikan hitam penuh agar oranye tidak hilang di printer hitam-putih
-  const lc=document.getElementById('lc'),c=gambarLabel(50,logoQr,557,20);lc.width=c.width;lc.height=c.height;const lg=lc.getContext('2d');lg.drawImage(c,0,0);
+  const lc=document.getElementById('lc'),c=gambarLabel(50,logoQr,552,38,0);lc.width=c.width;lc.height=c.height;const lg=lc.getContext('2d');lg.drawImage(c,0,0);
   const id=lg.getImageData(0,0,c.width,c.height),d=id.data;for(let i=0;i<d.length;i+=4){const v=0.3*d[i]+0.59*d[i+1]+0.11*d[i+2]<140?0:255;d[i]=d[i+1]=d[i+2]=v;}lg.putImageData(id,0,0); // pratinjau = hasil cetak hitam-putih
   if(!('serial' in navigator)){laporQ('Browser ini belum mendukung Bluetooth langsung. Buka di Google Chrome versi terbaru (Android).','err');document.getElementById('bQr').disabled=true;return;}
   document.getElementById('bQr').onclick=()=>cetakQl(false);document.getElementById('bQrGanti').onclick=()=>cetakQl(true);
@@ -336,7 +336,10 @@ async function cetakQl(baru){
     laporQ('Mengirim stiker QR ('+lebar+' mm)…');
     const w=p.writable.getWriter(),k=a=>w.write(a instanceof Uint8Array?a:new Uint8Array(a));
     if(lebar===50&&!potong){ // Roll kontinu 50 mm: mode ESC/P (hasil uji 30 Okt). Kalibrasi 2: skala 1:1 (300 dpi), bidang cetak lebar 557 titik mulai ±1,2 mm dari tepi kiri (lebih dari itu terpotong), celah atas ±1 mm & bawah ±0,6 mm
-      const EW=lebar===50?557:W,c2=gambarLabel(lebar,logoQr,EW,20),H2=c2.height,px2=c2.getContext('2d').getImageData(0,0,EW,H2).data;
+      // Celah rata 1,6 mm di 4 sisi (pilihan Bos 30 Okt). Printer ESC/P: area cetak mulai 1,2 mm dari kiri, lebar 557 titik; celah atas bawaan ±1,0 mm, bawah ±0,7 mm
+      // → isi 552×765 titik (46,7×64,8 mm) ditaruh di kanvas 557×783 dengan sisipan kosong kiri 5 & atas 7 titik, bawah dipendekkan 11 titik
+      const EW=lebar===50?557:W,H2=lebar===50?783:H,c2=document.createElement('canvas');c2.width=EW;c2.height=H2;const g2=c2.getContext('2d');g2.fillStyle='#fff';g2.fillRect(0,0,EW,H2);
+      g2.drawImage(lebar===50?gambarLabel(50,logoQr,552,38,0):c,lebar===50?5:0,lebar===50?7:0);const px2=g2.getImageData(0,0,EW,H2).data;
       const gelap=(x,y)=>{const i=(y*EW+x)*4;return 0.3*px2[i]+0.59*px2[i+1]+0.11*px2[i+2]<140;};
       await k([0x1B,0x69,0x61,0x00]);await k([0x1B,0x40]);await k([0x1B,0x55,0x02]);
       await k([0x1B,0x28,0x43,0x02,0x00,H2&255,H2>>8]);await k([0x1B,0x28,0x63,0x04,0x00,0,0,H2&255,H2>>8]);
@@ -368,7 +371,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 34 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 36 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
