@@ -47,6 +47,7 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding-bottom:calc(16
     <h1>Stiker QR</h1>
     <div class="lbl-wrap"><canvas id="lc" class="lblc" aria-label="Pratinjau stiker QR"></canvas></div>
     <div class="btns"><button class="utama" id="bQr" type="button">Cetak stiker QR</button><button class="kedua" id="bQrGanti" type="button">Pilih printer</button></div>
+    <button class="kedua" id="bQrUji3" type="button" style="margin-top:10px;width:100%">Uji C: mode ESC/P (sementara)</button>
     <div class="st" id="stq">Printer Brother QL-820NWB lewat Bluetooth. Ukuran label mengikuti roll yang terpasang (50 mm → 50 × 68 mm, 62 mm → 62 × 84 mm).</div>
   </section>
   <section class="card" id="stkSec">
@@ -305,7 +306,7 @@ async function modeQr(){
   const lc=document.getElementById('lc'),c=gambarLabel(50,logoQr);lc.width=c.width;lc.height=c.height;const lg=lc.getContext('2d');lg.drawImage(c,0,0);
   const id=lg.getImageData(0,0,c.width,c.height),d=id.data;for(let i=0;i<d.length;i+=4){const v=0.3*d[i]+0.59*d[i+1]+0.11*d[i+2]<140?0:255;d[i]=d[i+1]=d[i+2]=v;}lg.putImageData(id,0,0); // pratinjau = hasil cetak hitam-putih
   if(!('serial' in navigator)){laporQ('Browser ini belum mendukung Bluetooth langsung. Buka di Google Chrome versi terbaru (Android).','err');document.getElementById('bQr').disabled=true;return;}
-  document.getElementById('bQr').onclick=()=>cetakQl(false);document.getElementById('bQrGanti').onclick=()=>cetakQl(true);
+  document.getElementById('bQr').onclick=()=>cetakQl(false);document.getElementById('bQrGanti').onclick=()=>cetakQl(true);document.getElementById('bQrUji3').onclick=()=>{UJI=3;cetakQl(false).finally(()=>{UJI=0;});};
 }
 function laporQ(m,k){const e=document.getElementById('stq');e.textContent=m;e.className='st'+(k?' '+k:'');}
 let infoPort='';
@@ -330,6 +331,19 @@ async function cetakQl(baru){
     const potong=st[11]===0x0B,c=gambarLabel(lebar,logoQr),W=c.width,H=c.height,px=c.getContext('2d').getImageData(0,0,W,H).data,OFF=W+11+GESER;
     laporQ('Mengirim stiker QR ('+lebar+' mm)…');
     const w=p.writable.getWriter(),k=a=>w.write(a instanceof Uint8Array?a:new Uint8Array(a));
+    if(UJI===3){ // Cara C: mode ESC/P (dokumen Brother: margin minimum 2 mm, celah atas roll kontinu 1,5 mm)
+      const gelap=(x,y)=>{const i=(y*W+x)*4;return 0.3*px[i]+0.59*px[i+1]+0.11*px[i+2]<140;};
+      await k([0x1B,0x69,0x61,0x00]);await k([0x1B,0x40]);await k([0x1B,0x55,0x02]); // ESC/P, init, margin minimum 2 mm
+      await k([0x1B,0x28,0x43,0x02,0x00,H&255,H>>8]); // panjang halaman = tinggi gambar (titik 1/300")
+      await k([0x1B,0x28,0x63,0x04,0x00,0,0,H&255,H>>8]); // margin atas 0, bawah = H
+      for(let y0=0;y0<H;y0+=48){ // pita 48 titik: ESC * 72, 6 byte per kolom, bit 7 byte pertama = titik teratas
+        let pk=[0x1B,0x24,0,0,0x1B,0x2A,72,W&255,W>>8];
+        for(let x=0;x<W;x++){for(let b=0;b<6;b++){let v=0;for(let t=0;t<8;t++){const y=y0+b*8+t;if(y<H&&gelap(x,y))v|=0x80>>t;}pk.push(v);}}
+        pk.push(0x0D,0x1B,0x4A,48);await k(pk);
+      }
+      await k([0x0C]);w.releaseLock();await bacaN(p,32,10000).catch(()=>{});
+      laporQ('Uji C terkirim (ESC/P). Selesai.','ok');return;
+    }
     await k([0x1B,0x69,0x61,0x01]);
     const HR=UJI===2?2:1,HN=H*HR; // resolusi tinggi: tiap baris dikirim 2x (600 dpi arah panjang)
     await k([0x1B,0x69,0x7A,0xCE,potong?0x0B:0x0A,lebar,potong?st[17]:0,HN&255,(HN>>8)&255,(HN>>16)&255,0,0,0]);
@@ -350,7 +364,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 22 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 23 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
