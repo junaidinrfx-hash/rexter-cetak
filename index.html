@@ -262,7 +262,7 @@ function gambarQr(cv,teks,logo,warna,latar){
   const L=logo?(Math.round(n*0.17)|1):0,l0=Math.floor((n-L)/2),diLogo=(x,y)=>L>0&&x>=l0&&x<l0+L&&y>=l0&&y<l0+L; // logo kecil (±3% modul) agar QR (koreksi M) tetap terbaca
   const mata=(x,y)=>(x<7&&y<7)||(x>=n-7&&y<7)||(x<7&&y>=n-7);
   g.fillStyle=NV;
-  for(let y=0;y<n;y++)for(let x=0;x<n;x++){if(!q.dark(x,y)||mata(x,y)||diLogo(x,y))continue;g.fillRect(Math.floor(x*m),Math.floor(y*m),Math.ceil(m)+1,Math.ceil(m)+1);}
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){if(!q.dark(x,y)||mata(x,y)||diLogo(x,y))continue;const e=Number.isInteger(m)?0:1;g.fillRect(Math.floor(x*m),Math.floor(y*m),Math.ceil(m)+e,Math.ceil(m)+e);}
   [[0,0],[n-7,0],[0,n-7]].forEach(([x,y])=>{rr(x*m,y*m,7*m,7*m,m*.15);g.fill();g.fillStyle=LT;rr((x+1)*m,(y+1)*m,5*m,5*m,m*.1);g.fill();g.fillStyle=NV;rr((x+2)*m,(y+2)*m,3*m,3*m,m*.1);g.fill();});
   if(logo){const b=L*m,bx=l0*m;g.fillStyle='#fff';rr(bx,bx,b,b,m*1.2);g.fill();g.drawImage(logo,bx+m*.25,bx+m*.25,b-m*.5,b-m*.5);}
 }
@@ -276,14 +276,16 @@ function gambarLabel(lebar,logo){
   g.fillStyle='#fff';g.fillRect(0,0,W,H);
   const ins=mm(.8),cw=W-2*ins,ch=H-2*ins;g.save();rr(ins,ins,cw,ch,mm(5));g.clip();g.fillStyle='#000';g.fillRect(ins,ins,cw,mm(1.7));g.restore();
   g.strokeStyle='#000';g.lineWidth=mm(.35);rr(ins,ins,cw,ch,mm(5));g.stroke();
-  const qs=mm(27),qp=mm(1.8),bw=qs+2*qp,sn=D.sn||'–',bt=D.batch||'';
+  const nq=QRH.encode(D.qr||' ').size,md=Math.max(1,Math.round(mm(27)/nq)),qd=nq*md,qp=mm(1.8),bw=qd+2*qp,sn=D.sn||'–',bt=D.batch||'';
   g.font='700 '+mm(3.6)+'px ui-monospace,Menlo,Consolas,monospace';const snw=g.measureText(sn).width+mm(8.4),snh=mm(6.4);
   g.font='700 '+mm(2.8)+'px Arial,Helvetica,sans-serif';const btw=g.measureText(bt).width+mm(6),bth=mm(4.4);
   const lw=logo?Math.min(mm(32),mm(5.6)*logo.width/logo.height):0,lh=logo?lw*logo.height/logo.width:0;
   const tot=(logo?lh+mm(2.2):0)+bw+mm(2.6)+snh+(bt?mm(2)+bth:0);let y=ins+mm(1.7)+(ch-mm(1.7)-tot)/2;
   if(logo){g.drawImage(logo,(W-lw)/2,y,lw,lh);y+=lh+mm(2.2);}
   const bx=(W-bw)/2;g.lineWidth=mm(.3);rr(bx,y,bw,bw,mm(4));g.stroke();
-  const qc=document.createElement('canvas');qc.width=qc.height=600;gambarQr(qc,D.qr,logoTengah,'#000','#fff');g.drawImage(qc,bx+qp,y+qp,qs,qs);y+=bw+mm(2.6);
+  // QR digambar pas grid titik printer: tiap modul = md titik bulat, ditempel 1:1 tanpa skala agar semua kotak sama besar & tepinya tegas
+  const qc=document.createElement('canvas');qc.width=qc.height=qd;gambarQr(qc,D.qr,logoTengah,'#000','#fff');
+  g.imageSmoothingEnabled=false;g.drawImage(qc,Math.round(bx+(bw-qd)/2),Math.round(y+(bw-qd)/2));g.imageSmoothingEnabled=true;y+=bw+mm(2.6);
   g.fillStyle='#000';rr((W-snw)/2,y,snw,snh,snh/2);g.fill();g.fillStyle='#fff';g.textAlign='center';g.textBaseline='middle';
   g.font='700 '+mm(3.6)+'px ui-monospace,Menlo,Consolas,monospace';g.fillText(sn,W/2,y+snh/2+mm(.1));y+=snh+mm(2);
   if(bt){g.strokeStyle='#000';g.lineWidth=mm(.3);rr((W-btw)/2,y,btw,bth,bth/2);g.stroke();g.fillStyle='#000';g.font='700 '+mm(2.8)+'px Arial,Helvetica,sans-serif';g.fillText(bt,W/2,y+bth/2+mm(.1));}
@@ -335,7 +337,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 9 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 10 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
