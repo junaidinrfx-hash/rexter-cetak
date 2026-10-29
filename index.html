@@ -276,19 +276,22 @@ function gambarLabel(lebar,logo){
   g.fillStyle='#fff';g.fillRect(0,0,W,H);
   const ins=mm(.8),cw=W-2*ins,ch=H-2*ins;g.save();rr(ins,ins,cw,ch,mm(5));g.clip();g.fillStyle='#000';g.fillRect(ins,ins,cw,mm(1.7));g.restore();
   g.strokeStyle='#000';g.lineWidth=mm(.35);rr(ins,ins,cw,ch,mm(5));g.stroke();
-  const nq=QRH.encode(D.qr||' ').size,md=Math.max(1,Math.round(mm(27)/nq)),qd=nq*md,qp=mm(1.8),bw=qd+2*qp,sn=D.sn||'–',bt=D.batch||'';
-  g.font='700 '+mm(3.6)+'px ui-monospace,Menlo,Consolas,monospace';const snw=g.measureText(sn).width+mm(8.4),snh=mm(6.4);
-  g.font='700 '+mm(2.8)+'px Arial,Helvetica,sans-serif';const btw=g.measureText(bt).width+mm(6),bth=mm(4.4);
-  const lw=logo?Math.min(mm(32),mm(5.6)*logo.width/logo.height):0,lh=logo?lw*logo.height/logo.width:0;
-  const tot=(logo?lh+mm(2.2):0)+bw+mm(2.6)+snh+(bt?mm(2)+bth:0);let y=ins+mm(1.7)+(ch-mm(1.7)-tot)/2;
-  if(logo){g.drawImage(logo,(W-lw)/2,y,lw,lh);y+=lh+mm(2.2);}
+  // tata letak memenuhi label: QR dibuat sebesar mungkin dari sisa tinggi, jarak antar-elemen dirapatkan
+  const sn=D.sn||'–',bt=D.batch||'',qp=mm(1.8),G1=mm(1.4),G2=mm(1.5),G3=mm(1.2),PAD=mm(1.1),bar=mm(1.7);
+  g.font='700 '+mm(4.4)+'px ui-monospace,Menlo,Consolas,monospace';const snw=g.measureText(sn).width+mm(9),snh=mm(7.4);
+  g.font='700 '+mm(3.3)+'px Arial,Helvetica,sans-serif';const btw=g.measureText(bt).width+mm(7),bth=mm(5.2);
+  const lw=logo?Math.min(mm(36),mm(6.4)*logo.width/logo.height):0,lh=logo?lw*logo.height/logo.width:0;
+  const sisa=ch-bar-2*PAD-(logo?lh+G1:0)-G2-snh-(bt?G3+bth:0),nq=QRH.encode(D.qr||' ').size;
+  const md=Math.max(1,Math.floor(Math.min(sisa-2*qp,W-2*ins-mm(6)-2*qp)/nq)),qd=nq*md,bw=qd+2*qp;
+  const tot=(logo?lh+G1:0)+bw+G2+snh+(bt?G3+bth:0);let y=ins+bar+(ch-bar-tot)/2;
+  if(logo){g.drawImage(logo,(W-lw)/2,y,lw,lh);y+=lh+G1;}
   const bx=(W-bw)/2;g.lineWidth=mm(.3);rr(bx,y,bw,bw,mm(4));g.stroke();
   // QR digambar pas grid titik printer: tiap modul = md titik bulat, ditempel 1:1 tanpa skala agar semua kotak sama besar & tepinya tegas
   const qc=document.createElement('canvas');qc.width=qc.height=qd;gambarQr(qc,D.qr,logoTengah,'#000','#fff');
-  g.imageSmoothingEnabled=false;g.drawImage(qc,Math.round(bx+(bw-qd)/2),Math.round(y+(bw-qd)/2));g.imageSmoothingEnabled=true;y+=bw+mm(2.6);
+  g.imageSmoothingEnabled=false;g.drawImage(qc,Math.round(bx+(bw-qd)/2),Math.round(y+(bw-qd)/2));g.imageSmoothingEnabled=true;y+=bw+G2;
   g.fillStyle='#000';rr((W-snw)/2,y,snw,snh,snh/2);g.fill();g.fillStyle='#fff';g.textAlign='center';g.textBaseline='middle';
-  g.font='700 '+mm(3.6)+'px ui-monospace,Menlo,Consolas,monospace';g.fillText(sn,W/2,y+snh/2+mm(.1));y+=snh+mm(2);
-  if(bt){g.strokeStyle='#000';g.lineWidth=mm(.3);rr((W-btw)/2,y,btw,bth,bth/2);g.stroke();g.fillStyle='#000';g.font='700 '+mm(2.8)+'px Arial,Helvetica,sans-serif';g.fillText(bt,W/2,y+bth/2+mm(.1));}
+  g.font='700 '+mm(4.4)+'px ui-monospace,Menlo,Consolas,monospace';g.fillText(sn,W/2,y+snh/2+mm(.1));y+=snh+G3;
+  if(bt){g.strokeStyle='#000';g.lineWidth=mm(.3);rr((W-btw)/2,y,btw,bth,bth/2);g.stroke();g.fillStyle='#000';g.font='700 '+mm(3.3)+'px Arial,Helvetica,sans-serif';g.fillText(bt,W/2,y+bth/2+mm(.1));}
   return c;
 }
 let logoQr=null,logoTengah=null;
@@ -330,7 +333,7 @@ async function cetakQl(baru){
     let pk=[];
     for(let y=0;y<H;y++){const L=new Uint8Array(90);for(let x=0;x<W;x++){const i=(y*W+x)*4;if(0.3*px[i]+0.59*px[i+1]+0.11*px[i+2]<140){const bit=OFF-x;L[bit>>3]|=0x80>>(bit&7);}}pk.push(0x67,0x00,0x5A);for(const v of L)pk.push(v);if(pk.length>4000){await k(pk);pk=[];}}
     pk.push(0x1A);await k(pk);w.releaseLock();await bacaN(p,32,10000).catch(()=>{});
-    laporQ('Stiker QR terkirim ke printer ('+lebar+' mm). Selesai.','ok');
+    laporQ('Stiker QR terkirim ke printer ('+lebar+' mm). Selesai. [media: '+(st[11]===0x0B?'label potong '+st[10]+'×'+st[17]+' mm':st[11]===0x0A?'roll kontinu '+st[10]+' mm':'tipe '+st[11])+']','ok');
   }catch(e){
     if(e&&e.name==='NotFoundError')laporQ('Printer belum dipilih. Pastikan QL-820NWB sudah di-pairing, lalu tekan Pilih printer.','err');
     else{let n='?';try{n=(await navigator.serial.getPorts()).length;}catch(x){}laporQ('Gagal cetak: '+(e&&e.message||e)+' [diag: '+(e&&e.name)+' · port '+infoPort+' · izin '+n+']','err');}
@@ -342,7 +345,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 13 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 14 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
