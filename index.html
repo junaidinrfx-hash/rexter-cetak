@@ -47,8 +47,6 @@ footer{text-align:center;font-size:12px;color:var(--mute);padding-bottom:calc(16
     <h1>Stiker QR</h1>
     <div class="lbl-wrap"><canvas id="lc" class="lblc" aria-label="Pratinjau stiker QR"></canvas></div>
     <div class="btns"><button class="utama" id="bQr" type="button">Cetak stiker QR</button><button class="kedua" id="bQrGanti" type="button">Pilih printer</button></div>
-    <button class="kedua" id="bQrUji" type="button" style="margin-top:10px;width:100%">Uji A: tanpa margin (sementara)</button>
-    <button class="kedua" id="bQrUji2" type="button" style="margin-top:10px;width:100%">Uji B: resolusi tinggi (sementara)</button>
     <div class="st" id="stq">Printer Brother QL-820NWB lewat Bluetooth. Ukuran label mengikuti roll yang terpasang (50 mm → 50 × 68 mm, 62 mm → 62 × 84 mm).</div>
   </section>
   <section class="card" id="stkSec">
@@ -270,7 +268,7 @@ function gambarQr(cv,teks,logo,warna,latar){
 }
 /* Label QR untuk Brother QL-820NWB (300 dpi, 720 pin). Dicetak langsung lewat Bluetooth, hitam-putih. */
 const GESER=-6; // roll 50 mm (ukur cetak uji 30 Okt): isi 588 titik di pin 6–593, mepet tepi label kiri-kanan
-let UJI=0; // 0 normal · 1 uji tanpa potong & margin 0 · 2 uji resolusi tinggi (margin dihitung 600 dpi?)
+let UJI=0; // jalur uji 30 Okt (1 tanpa potong & margin 0, 2 resolusi tinggi): keduanya tetap ±3 mm atas-bawah, tombol uji dihapus
 const MARGIN=35; // jarak kosong atas & bawah roll kontinu = minimum printer QL (35 titik ±3 mm); diuji 30 Okt: nilai lebih kecil tetap dipaksa 3 mm
 const QL={50:{dot:588,panjang:68,kurang:2*MARGIN},62:{dot:696,panjang:84}}, PX=300/25.4;
 function hitamkan(im){if(!im)return null;const c=document.createElement('canvas');c.width=im.naturalWidth||im.width;c.height=im.naturalHeight||im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const d=g.getImageData(0,0,c.width,c.height),p=d.data;
@@ -307,7 +305,7 @@ async function modeQr(){
   const lc=document.getElementById('lc'),c=gambarLabel(50,logoQr);lc.width=c.width;lc.height=c.height;const lg=lc.getContext('2d');lg.drawImage(c,0,0);
   const id=lg.getImageData(0,0,c.width,c.height),d=id.data;for(let i=0;i<d.length;i+=4){const v=0.3*d[i]+0.59*d[i+1]+0.11*d[i+2]<140?0:255;d[i]=d[i+1]=d[i+2]=v;}lg.putImageData(id,0,0); // pratinjau = hasil cetak hitam-putih
   if(!('serial' in navigator)){laporQ('Browser ini belum mendukung Bluetooth langsung. Buka di Google Chrome versi terbaru (Android).','err');document.getElementById('bQr').disabled=true;return;}
-  document.getElementById('bQr').onclick=()=>cetakQl(false);document.getElementById('bQrGanti').onclick=()=>cetakQl(true);document.getElementById('bQrUji').onclick=()=>{UJI=1;cetakQl(false).finally(()=>{UJI=0;});};document.getElementById('bQrUji2').onclick=()=>{UJI=2;cetakQl(false).finally(()=>{UJI=0;});};
+  document.getElementById('bQr').onclick=()=>cetakQl(false);document.getElementById('bQrGanti').onclick=()=>cetakQl(true);
 }
 function laporQ(m,k){const e=document.getElementById('stq');e.textContent=m;e.className='st'+(k?' '+k:'');}
 let infoPort='';
@@ -352,7 +350,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 21 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 22 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
