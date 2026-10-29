@@ -331,16 +331,18 @@ async function cetakQl(baru){
     const potong=st[11]===0x0B,c=gambarLabel(lebar,logoQr),W=c.width,H=c.height,px=c.getContext('2d').getImageData(0,0,W,H).data,OFF=W+11+GESER;
     laporQ('Mengirim stiker QR ('+lebar+' mm)…');
     const w=p.writable.getWriter(),k=a=>w.write(a instanceof Uint8Array?a:new Uint8Array(a));
-    if(UJI===3){ // Cara C uji kalibrasi: pola blok untuk mengukur skala ESC/P (uji 1-2: pita melintang & skala tak jelas)
-      await k([0x1B,0x69,0x61,0x00]);await k([0x1B,0x40]);await k([0x1B,0x69,0x4C,0x01]);await k([0x1B,0x55,0x02]); // ESC/P, init, LANSKAP, margin min 2 mm
-      await k([0x1B,0x28,0x43,0x02,0x00,803&255,803>>8]);await k([0x1B,0x28,0x63,0x04,0x00,0,0,803&255,803>>8]);
-      const blok=(m,nb,n)=>{const a=[0x1B,0x24,0,0,0x1B,0x2A,m,n&255,n>>8];for(let x=0;x<n*nb;x++)a.push(0xFF);return a;};
-      await k(blok(72,6,400));await k([0x0D,0x1B,0x4A,60]);   // A: mode 72 (6 byte), 400 kolom → 33,9 mm bila 300 dpi / 28,2 mm bila 360 dpi
-      await k(blok(39,3,300));await k([0x0D,0x1B,0x4A,60]);   // B: mode 39 (3 byte), 300 kolom
-      await k(blok(0,1,60));await k([0x0D,0x1B,0x4A,60]);     // C: mode 0 (1 byte), 60 kolom → 25,4 mm bila 60 dpi
-      await k(blok(72,6,100));                                 // D: pendek, penanda arah
+    if(UJI===3){ // Cara C (ESC/P). Kalibrasi 30 Okt: mode 72 = 1 kolom per titik 300 dpi, pita 48 titik; baris tercetak SEPANJANG arah kertas & bertumpuk melintang; awal baris ±1,9 mm dari tepi
+      const gelap=(x,y)=>{const i=(y*W+x)*4;return 0.3*px[i]+0.59*px[i+1]+0.11*px[i+2]<140;};
+      await k([0x1B,0x69,0x61,0x00]);await k([0x1B,0x40]);await k([0x1B,0x55,0x02]);
+      await k([0x1B,0x28,0x43,0x02,0x00,H&255,H>>8]);await k([0x1B,0x28,0x63,0x04,0x00,0,0,H&255,H>>8]);
+      // gambar diputar: kolom printer c = baris stiker y (sepanjang kertas), pita ke-b = kolom stiker x dari kanan
+      for(let b=0;b*48<W;b++){
+        const pos=b*48;let pk=[0x1B,0x28,0x56,0x02,0x00,pos&255,pos>>8,0x1B,0x24,0,0,0x1B,0x2A,72,H&255,H>>8];
+        for(let y=0;y<H;y++){for(let q=0;q<6;q++){let v=0;for(let t=0;t<8;t++){const x=W-1-(pos+q*8+t);if(x>=0&&gelap(x,y))v|=0x80>>t;}pk.push(v);}}
+        pk.push(0x0D);await k(pk);
+      }
       await k([0x0C]);w.releaseLock();await bacaN(p,32,10000).catch(()=>{});
-      laporQ('Uji C (kalibrasi) terkirim. Selesai.','ok');return;
+      laporQ('Uji C (stiker ESC/P) terkirim. Selesai.','ok');return;
     }
     await k([0x1B,0x69,0x61,0x01]);
     const HR=UJI===2?2:1,HN=H*HR; // resolusi tinggi: tiap baris dikirim 2x (600 dpi arah panjang)
@@ -362,7 +364,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 25 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 26 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
