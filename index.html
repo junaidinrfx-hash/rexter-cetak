@@ -333,7 +333,7 @@ async function cetakQl(baru){
     const w=p.writable.getWriter(),k=a=>w.write(a instanceof Uint8Array?a:new Uint8Array(a));
     if(UJI===3){ // Cara C: mode ESC/P (dokumen Brother: margin minimum 2 mm, celah atas roll kontinu 1,5 mm)
       const gelap=(x,y)=>{const i=(y*W+x)*4;return 0.3*px[i]+0.59*px[i+1]+0.11*px[i+2]<140;};
-      await k([0x1B,0x69,0x61,0x00]);await k([0x1B,0x40]);await k([0x1B,0x55,0x02]); // ESC/P, init, margin minimum 2 mm
+      await k([0x1B,0x69,0x61,0x00]);await k([0x1B,0x40]);await k([0x1B,0x69,0x4C,0x00]);await k([0x1B,0x55,0x02]); // ESC/P, init, paksa potret (uji 1: printer ternyata lanskap → pita melintang & terpotong 3 label), margin minimum 2 mm
       await k([0x1B,0x28,0x43,0x02,0x00,H&255,H>>8]); // panjang halaman = tinggi gambar (titik 1/300")
       await k([0x1B,0x28,0x63,0x04,0x00,0,0,H&255,H>>8]); // margin atas 0, bawah = H
       for(let y0=0;y0<H;y0+=48){ // pita 48 titik: ESC * 72, 6 byte per kolom, bit 7 byte pertama = titik teratas
@@ -364,7 +364,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 23 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 24 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
