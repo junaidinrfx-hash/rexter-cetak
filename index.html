@@ -305,7 +305,8 @@ let logoQr=null,logoTengah=null;
 async function modeQr(){
   document.getElementById('stkSec').hidden=true;document.getElementById('ptSec').hidden=true;document.getElementById('qrSec').hidden=false;
   document.querySelector('.top span').textContent='Cetak stiker QR tabung';
-  logoTengah=hitamkan(await muat(QRLOGO));if(logoTengah)logoTengah.__teks=[48,68,191,171]; // kotak teks 'Reed FOX' di PNG 240 pxlogoQr=hitamkan(await muat(D.logo||LOGO)); // logo lengkap (ReedFOX/Mitra) di atas QR, dijadikan hitam penuh agar oranye tidak hilang di printer hitam-putih
+  logoTengah=hitamkan(await muat(QRLOGO));if(logoTengah)logoTengah.__teks=[48,68,191,171]; /* kotak teks 'Reed FOX' di PNG 240 px */
+  logoQr=hitamkan(await muat(D.logo||LOGO)); // logo lengkap (ReedFOX/Mitra) di atas QR, dijadikan hitam penuh agar oranye tidak hilang di printer hitam-putih
   const lc=document.getElementById('lc'),c=gambarLabel(50,logoQr,557,20);lc.width=c.width;lc.height=c.height;const lg=lc.getContext('2d');lg.drawImage(c,0,0);
   const id=lg.getImageData(0,0,c.width,c.height),d=id.data;for(let i=0;i<d.length;i+=4){const v=0.3*d[i]+0.59*d[i+1]+0.11*d[i+2]<140?0:255;d[i]=d[i+1]=d[i+2]=v;}lg.putImageData(id,0,0); // pratinjau = hasil cetak hitam-putih
   if(!('serial' in navigator)){laporQ('Browser ini belum mendukung Bluetooth langsung. Buka di Google Chrome versi terbaru (Android).','err');document.getElementById('bQr').disabled=true;return;}
@@ -367,7 +368,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 33 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 34 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
