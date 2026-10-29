@@ -268,7 +268,8 @@ function gambarQr(cv,teks,logo,warna,latar){
 }
 /* Label QR untuk Brother QL-820NWB (300 dpi, 720 pin). Dicetak langsung lewat Bluetooth, hitam-putih. */
 const GESER=2; // hasil ukur cetak uji 30 Okt (roll 50 mm): label menempati pin ±8–592, isi dibuat 573 titik di pin 14–586 = sisa ±0,5 mm kiri-kanan
-const QL={50:{dot:573,panjang:68,kurang:34},62:{dot:696,panjang:84}}, PX=300/25.4;
+const MARGIN=12; // jarak kosong atas & bawah roll kontinu (titik; 12 = ±1 mm). Bawaan Brother 35 (3 mm), dikecilkan agar isi penuh sampai tepi
+const QL={50:{dot:573,panjang:68,kurang:2*MARGIN},62:{dot:696,panjang:84}}, PX=300/25.4;
 function hitamkan(im){if(!im)return null;const c=document.createElement('canvas');c.width=im.naturalWidth||im.width;c.height=im.naturalHeight||im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const d=g.getImageData(0,0,c.width,c.height),p=d.data;
   for(let i=0;i<p.length;i+=4){const ink=p[i+3]>110&&(0.3*p[i]+0.59*p[i+1]+0.11*p[i+2])<225;p[i]=p[i+1]=p[i+2]=ink?0:255;p[i+3]=ink?255:0;}g.putImageData(d,0,0);return c;}
 function gambarLabel(lebar,logo){
@@ -330,7 +331,7 @@ async function cetakQl(baru){
     const w=p.writable.getWriter(),k=a=>w.write(a instanceof Uint8Array?a:new Uint8Array(a));
     await k([0x1B,0x69,0x61,0x01]);
     await k([0x1B,0x69,0x7A,0xCE,potong?0x0B:0x0A,lebar,potong?st[17]:0,H&255,(H>>8)&255,(H>>16)&255,0,0,0]);
-    await k([0x1B,0x69,0x4D,0x40]);await k([0x1B,0x69,0x41,0x01]);await k([0x1B,0x69,0x4B,0x08]);await k([0x1B,0x69,0x64,potong?0:35,0]);
+    await k([0x1B,0x69,0x4D,0x40]);await k([0x1B,0x69,0x41,0x01]);await k([0x1B,0x69,0x4B,0x08]);await k([0x1B,0x69,0x64,potong?0:MARGIN&255,potong?0:MARGIN>>8]);
     let pk=[];
     for(let y=0;y<H;y++){const L=new Uint8Array(90);for(let x=0;x<W;x++){const i=(y*W+x)*4;if(0.3*px[i]+0.59*px[i+1]+0.11*px[i+2]<140){const bit=OFF-x;L[bit>>3]|=0x80>>(bit&7);}}pk.push(0x67,0x00,0x5A);for(const v of L)pk.push(v);if(pk.length>4000){await k(pk);pk=[];}}
     pk.push(0x1A);await k(pk);w.releaseLock();await bacaN(p,32,10000).catch(()=>{});
@@ -346,7 +347,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 16 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 17 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
