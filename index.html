@@ -302,7 +302,10 @@ async function modeQr(){
   document.getElementById('bQr').onclick=()=>cetakQl(false);document.getElementById('bQrGanti').onclick=()=>cetakQl(true);
 }
 function laporQ(m,k){const e=document.getElementById('stq');e.textContent=m;e.className='st'+(k?' '+k:'');}
-async function statusPort(p){await p.open({baudRate:9600});const w=p.writable.getWriter();const a=new Uint8Array(203);a.set([0x1B,0x40,0x1B,0x69,0x53],198);await w.write(a);w.releaseLock();return bacaN(p,32,5000);}
+async function bukaPort(p){ // Bluetooth kadang gagal di percobaan pertama (printer baru bangun / sambungan lama belum lepas): coba ulang 3x
+  let err;for(let i=0;i<3;i++){try{await p.open({baudRate:9600});return;}catch(e){err=e;if(/already open/i.test(e.message))return;try{await p.close();}catch(x){}await new Promise(r=>setTimeout(r,1200));}}
+  throw new Error('Printer tidak bisa disambungkan lewat Bluetooth. Cek: (1) QL-820NWB menyala dan Bluetooth-nya aktif, (2) sudah dipasangkan di Pengaturan Bluetooth tablet, (3) tidak sedang tersambung ke HP atau aplikasi lain (mis. iPrint&Label), (4) jarak dekat. Lalu tekan Cetak lagi.');}
+async function statusPort(p){await bukaPort(p);const w=p.writable.getWriter();const a=new Uint8Array(203);a.set([0x1B,0x40,0x1B,0x69,0x53],198);await w.write(a);w.releaseLock();return bacaN(p,32,5000);}
 async function portQl(baru){
   if(!baru){for(const p of await navigator.serial.getPorts()){try{const st=await statusPort(p);if(st.length===32&&st[0]===0x80&&st[10]>=29)return[p,st];}catch(e){}try{await p.close();}catch(e){}}}
   const p=await navigator.serial.requestPort({allowedBluetoothServiceClassIds:[SPP_UUID]});const st=await statusPort(p);
@@ -337,7 +340,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 10 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 11 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
