@@ -274,8 +274,8 @@ const MARGIN=35; // jarak kosong atas & bawah roll kontinu = minimum printer QL 
 const QL={50:{dot:588,panjang:68,kurang:2*MARGIN},62:{dot:696,panjang:84}}, PX=300/25.4;
 function hitamkan(im){if(!im)return null;const c=document.createElement('canvas');c.width=im.naturalWidth||im.width;c.height=im.naturalHeight||im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const d=g.getImageData(0,0,c.width,c.height),p=d.data;
   for(let i=0;i<p.length;i+=4){const ink=p[i+3]>110&&(0.3*p[i]+0.59*p[i+1]+0.11*p[i+2])<225;p[i]=p[i+1]=p[i+2]=ink?0:255;p[i+3]=ink?255:0;}g.putImageData(d,0,0);return c;}
-function gambarLabel(lebar,logo){
-  const q=QL[lebar]||QL[50],k=lebar/50,W=q.dot,H=Math.round(q.panjang*PX)-(q.kurang||70),c=document.createElement('canvas');c.width=W;c.height=H;
+function gambarLabel(lebar,logo,dotW,kurang){
+  const q=QL[lebar]||QL[50],k=lebar/50,W=dotW||q.dot,H=Math.round(q.panjang*PX)-(kurang!=null?kurang:(q.kurang||70)),c=document.createElement('canvas');c.width=W;c.height=H;
   const g=c.getContext('2d'),mm=v=>v*PX*k,rr=(x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();};
   g.fillStyle='#fff';g.fillRect(0,0,W,H);
   const ins=mm(.25),cw=W-2*ins,ch=H-2*ins;g.save();rr(ins,ins,cw,ch,mm(5));g.clip();g.fillStyle='#000';g.fillRect(ins,ins,cw,mm(1.7));g.restore();
@@ -331,24 +331,18 @@ async function cetakQl(baru){
     const potong=st[11]===0x0B,c=gambarLabel(lebar,logoQr),W=c.width,H=c.height,px=c.getContext('2d').getImageData(0,0,W,H).data,OFF=W+11+GESER;
     laporQ('Mengirim stiker QR ('+lebar+' mm)…');
     const w=p.writable.getWriter(),k=a=>w.write(a instanceof Uint8Array?a:new Uint8Array(a));
-    if(UJI===3){ // Cara C (ESC/P) — KALIBRASI 2: pola skala & posisi (1 label), lalu stiker final. Mode 72: 1 kolom = 1 titik?, pita 48 titik, kolom melintang lebar, pita sepanjang kertas
-      const KW=588,KH=803,PL=KH; // bidang sama dengan stiker 50×68 mm
-      const pat=(x,y)=>{ // tepi: garis 3 titik keliling; tanda silang tiap 100 titik (x) & 100 titik (y); blok hitam 60×60 di pojok kiri-atas; segitiga penanda arah di kanan-atas
-        if(x<3||y<3||x>=KW-3||y>=KH-3)return true;
-        if(x<60&&y<60)return true;
-        if(y<60&&x>=KW-60&&(x-(KW-60))>=(60-y))return true;
-        if(x%100<2&&(y%100)<40)return true; // tik vertikal pendek di setiap kelipatan 100 kolom (x=100,200,…,500)
-        if(y%100<2&&(x%100)<40)return true; // tik horizontal pendek di setiap kelipatan 100 baris
-        return false;};
+    if(UJI===3){ // Cara C (ESC/P). Kalibrasi 2 (30 Okt): skala 1:1 (300 dpi), bidang cetak lebar 557 titik mulai ±1,2 mm dari tepi kiri (lebih dari itu terpotong), celah atas ±1 mm & bawah ±0,6 mm
+      const EW=lebar===50?557:W,c2=gambarLabel(lebar,logoQr,EW,20),H2=c2.height,px2=c2.getContext('2d').getImageData(0,0,EW,H2).data;
+      const gelap=(x,y)=>{const i=(y*EW+x)*4;return 0.3*px2[i]+0.59*px2[i+1]+0.11*px2[i+2]<140;};
       await k([0x1B,0x69,0x61,0x00]);await k([0x1B,0x40]);await k([0x1B,0x55,0x02]);
-      await k([0x1B,0x28,0x43,0x02,0x00,PL&255,PL>>8]);await k([0x1B,0x28,0x63,0x04,0x00,0,0,PL&255,PL>>8]);
-      for(let b=0;b*48<KH;b++){
-        const pos=Math.min(b*48,KH-48);let pk=[0x1B,0x28,0x56,0x02,0x00,pos&255,pos>>8,0x1B,0x24,0,0,0x1B,0x2A,72,KW&255,KW>>8];
-        for(let x=0;x<KW;x++){for(let q=0;q<6;q++){let v=0;for(let t=0;t<8;t++){const y=pos+q*8+t;if(y<KH&&pat(x,y))v|=0x80>>t;}pk.push(v);}}
+      await k([0x1B,0x28,0x43,0x02,0x00,H2&255,H2>>8]);await k([0x1B,0x28,0x63,0x04,0x00,0,0,H2&255,H2>>8]);
+      for(let b=0;b*48<H2;b++){
+        const pos=Math.min(b*48,H2-48);let pk=[0x1B,0x28,0x56,0x02,0x00,pos&255,pos>>8,0x1B,0x24,0,0,0x1B,0x2A,72,EW&255,EW>>8];
+        for(let x=0;x<EW;x++){for(let q=0;q<6;q++){let v=0;for(let t=0;t<8;t++){const y=pos+q*8+t;if(y<H2&&gelap(x,y))v|=0x80>>t;}pk.push(v);}}
         pk.push(0x0D);await k(pk);
       }
       await k([0x0C]);w.releaseLock();await bacaN(p,32,10000).catch(()=>{});
-      laporQ('Uji C (kalibrasi 2) terkirim. Selesai.','ok');return;
+      laporQ('Uji C (stiker ESC/P, lebar 557) terkirim. Selesai.','ok');return;
     }
     await k([0x1B,0x69,0x61,0x01]);
     const HR=UJI===2?2:1,HN=H*HR; // resolusi tinggi: tiap baris dikirim 2x (600 dpi arah panjang)
@@ -370,7 +364,7 @@ const $=id=>document.getElementById(id);
 function lapor(m,k){const e=$('st');e.textContent=m;e.className='st'+(k?' '+k:'');}
 function baca(){try{const h=location.hash.replace(/^#d=/,'');if(!h)return null;const b=atob(h.replace(/-/g,'+').replace(/_/g,'/'));return JSON.parse(decodeURIComponent(escape(b)));}catch(e){return null;}}
 const D=baca();let cetakUrl='';
-(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 30 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
+(()=>{const m=navigator.userAgent.match(/Chrome\/(\d+)/);document.getElementById('ver').textContent='Halaman versi 31 · Chrome '+(m?m[1]:'?')+' · Web Serial '+(('serial' in navigator)?'ada':'tidak ada');})();
 function muat(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src;});}
 (async()=>{
   if(D&&D.mode==='qr')return modeQr();
